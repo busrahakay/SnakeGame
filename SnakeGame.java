@@ -3,5 +3,4 @@ public class SnakeGame {
         new GameFrame();
     }
 }
-
-//bitiş ekranında skor gösterilmeli bunu veri tabanıyla yapmalısın.
+//main metodu ile oyun başlatılır ancak işlevsellik GameFrame ve alt sınıflarındadır.

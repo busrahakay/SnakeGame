@@ -1,0 +1,50 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "SnakeGame",
+      "request": "launch",
+      "mainClass": "SnakeGame",
+      "projectName": "developed_5c9d1741"
+    },
+    {
+      "type": "java",
+      "name": "GameFrame",
+      "request": "launch",
+      "mainClass": "GameFrame",
+      "projectName": "developed_5c9d1741"
+    },
+    {
+      "type": "java",
+      "name": "SnakeGame",
+      "request": "launch",
+      "mainClass": "SnakeGame",
+      "projectName": "developed_9bb5c568"
+    },
+    {
+      "type": "java",
+      "name": "Current File",
+      "request": "launch",
+      "mainClass": "${file}"
+    },
+    {
+      "type": "java",
+      "name": "SnakeGame",
+      "request": "launch",
+      "mainClass": "SnakeGame",
+      "projectName": "developed",
+      "classPaths": [
+        "src",
+        "libs/ucanaccess-5.0.1.jar",
+        "libs/hsqldb-2.5.0.jar",
+        "libs/jackcess3.0.1.jar",
+        "libs/commons-lang3-3.8.1.jar",
+        "libs/commons-logging-1.2.jar"
+      ]
+    }
+  ]
+}

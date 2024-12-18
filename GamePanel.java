@@ -1,54 +1,78 @@
 import javax.swing.*;
 import java.awt.*;
 import java.util.Random;
+import java.util.List;
+import java.util.ArrayList;
 
-public class GamePanel extends JPanel implements Runnable {
+
+public class GamePanel extends JPanel implements Runnable { //Thread olarak çalışabilmesi sağlanır.
+
+    private Color backgroundColor = Color.black; // Varsayılan arka plan rengi
     static final int SCREEN_WIDTH = 600;
     static final int SCREEN_HEIGHT = 600;
     static final int UNIT_SIZE = 25;
     static final int GAME_UNITS = (SCREEN_WIDTH * SCREEN_HEIGHT) / UNIT_SIZE;
-    static final int DELAY_PLAYER = 100;  // Oyuncu yılan hızı
-    static final int DELAY_AI = 90;      // AI yılan hızı (daha hızlı)
-    static final int GAME_TIME = 15000;  // 15 saniye oyun süresi
-    final int[] playerX = new int[GAME_UNITS];
-    final int[] playerY = new int[GAME_UNITS];
-    final int[] aiX = new int[GAME_UNITS];
-    final int[] aiY = new int[GAME_UNITS];
-    int playerBodyParts = 3;
-    int aiBodyParts = 3;
-    int playerApplesEaten;
-    int aiApplesEaten;
+    static final int DELAY_GREEN = 100;  // yeşil yılan hızı
+    static final int DELAY_BLUE = 90;  //mavi yılan hızı (daha hızlı)
+    static final int GAME_TIME = 15000;  //15 saniye oyun süresi
+
+    //yılanların koordinatlarını tutmak için dizi oluşturuldu.
+    final int[] greenX = new int[GAME_UNITS];
+    final int[] greenY = new int[GAME_UNITS];
+    final int[] blueX = new int[GAME_UNITS];
+    final int[] blueY = new int[GAME_UNITS];
+
+    //yılanların başlangıç vücut uzunlukları 
+    int greenBodyParts = 3;
+    int blueBodyParts = 3;
+
+    //yılanların yedikleri elma sayıları tutulur.
+    int greenApplesEaten;
+    int blueApplesEaten;
+
+    //elmanın konumları tutulur.
     int appleX;
     int appleY;
-    char playerDirection = 'R';
-    char aiDirection = 'L';
+
+    //hareket yönleri
+    char greenDirection = 'R';
+    char blueDirection = 'L';
+
     boolean running = false;
-    Thread playerThread;
-    Thread aiThread;
+
+    //THREAD KULLANIMLARI İÇİN OLUŞTURULUR.
+    Thread greenThread;
+    Thread blueThread;
     Thread gameThread;
     Random random;
 
-    int timeLeft = GAME_TIME / 1000; // Saniye sayacı
+    int timeLeft = GAME_TIME / 1000; //oyun süresi kontrol edilir. (saniye olarak)
     private JPanel endGamePanel;
     private JButton restartButton;
     private JButton exitButton;
+    private boolean scoreSaved = false; 
 
     public GamePanel() {
         random = new Random();
         this.setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
         this.setBackground(Color.black);
         this.setFocusable(true);
-        
         createEndGamePanel(); // Bitiş panelini oluştur
     }
 
+    public void setBackgroundColor(Color color) {
+        this.backgroundColor = color; // Yeni rengi ayarla
+        this.setBackground(color);   // Panelin arka planını güncelle
+        repaint();                   // Ekranı yeniden çiz
+    }
+    
     private void createEndGamePanel() {
         endGamePanel = new JPanel();
         endGamePanel.setLayout(new BoxLayout(endGamePanel, BoxLayout.Y_AXIS));
-        endGamePanel.setBackground(Color.black);
-        endGamePanel.setBorder(BorderFactory.createEmptyBorder(100, 100, 100, 100)); // Ekranın ortasında konumlandırmak için kenar boşlukları
+        endGamePanel.setOpaque(false);
+        endGamePanel.setBorder(BorderFactory.createEmptyBorder(50, 100, 100, 100)); // Ekranın ortasında konumlandırmak için kenar boşlukları
     
-        restartButton = new JButton("Tekrar Oyna");
+        restartButton = new JButton("START AGAIN");
         restartButton.setBackground(Color.green);
         restartButton.setForeground(Color.white);
         restartButton.setPreferredSize(new Dimension(250, 70)); // Daha büyük buton boyutu
@@ -56,7 +80,7 @@ public class GamePanel extends JPanel implements Runnable {
         restartButton.setAlignmentX(Component.CENTER_ALIGNMENT); // Butonu ortala
         restartButton.addActionListener(e -> resetGame());
     
-        exitButton = new JButton("Çık");
+        exitButton = new JButton("EXIT");
         exitButton.setBackground(Color.red);
         exitButton.setForeground(Color.white);
         exitButton.setPreferredSize(new Dimension(250, 70)); // Daha büyük buton boyutu
@@ -76,35 +100,35 @@ public class GamePanel extends JPanel implements Runnable {
         newApple();
         running = true;
 
-        playerThread = new Thread(() -> {
+        greenThread = new Thread(() -> {
             while (running) {
-                moveSnake(playerX, playerY, playerBodyParts, playerDirection, appleX, appleY);
-                checkApple(playerX, playerY, "player");
-                repaint();
+                moveSnake(greenX, greenY, greenBodyParts, greenDirection, appleX, appleY); //yılanın hareketi güncellenir.
+                checkApple(greenX, greenY, "green"); //yılanın elma yiyip yememe kontrolü
+                repaint(); //görsel güncelleme
                 try {
-                    Thread.sleep(DELAY_PLAYER);
+                    Thread.sleep(DELAY_GREEN); //yılan hızı
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
             }
         });
-        playerThread.start();
+        greenThread.start();
 
-        aiThread = new Thread(() -> {
+        blueThread = new Thread(() -> {
             while (running) {
-                moveSnake(aiX, aiY, aiBodyParts, aiDirection, appleX, appleY);
-                checkApple(aiX, aiY, "ai");
+                moveSnake(blueX, blueY, blueBodyParts, blueDirection, appleX, appleY);
+                checkApple(blueX, blueY, "blue");
                 repaint();
                 try {
-                    Thread.sleep(DELAY_AI);
+                    Thread.sleep(DELAY_BLUE);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
             }
         });
-        aiThread.start();
+        blueThread.start();
 
-        gameThread = new Thread(() -> {
+        gameThread = new Thread(() -> { //oyun süresini kontrol eden thread
             long startTime = System.currentTimeMillis();
             while (timeLeft > 0 && running) {
                 long currentTime = System.currentTimeMillis();
@@ -114,7 +138,6 @@ public class GamePanel extends JPanel implements Runnable {
                     timeLeft--;
                     startTime = currentTime; // başlangıcı güncelle
                 }
-                
                 try {
                     Thread.sleep(50); // Daha sık kontrol yaparak hassasiyeti artır
                 } catch (InterruptedException e) {
@@ -126,49 +149,54 @@ public class GamePanel extends JPanel implements Runnable {
         gameThread.start();
     }
 
-    public void paintComponent(Graphics g) {
+    public void paintComponent(Graphics g) { //swing panelinde çizim yapmak için kullanılan metottur.
         super.paintComponent(g);
         draw(g);
     }
 
     public void draw(Graphics g) {
         if (running) {
+            //elma çizilir
             g.setColor(Color.red);
             g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
 
             // Green Snake çiz
-            for (int i = 0; i < playerBodyParts; i++) {
+            for (int i = 0; i < greenBodyParts; i++) {
+                //if-else yapısıyla beraber yılanın başı ve vücudu farklı renk tonlarında ayarlandı.
                 if (i == 0) {
                     g.setColor(Color.green);
-                    g.fillRect(playerX[i], playerY[i], UNIT_SIZE, UNIT_SIZE);
+                    g.fillRect(greenX[i], greenY[i], UNIT_SIZE, UNIT_SIZE);
                 } else {
                     g.setColor(new Color(45, 180, 0));
-                    g.fillRect(playerX[i], playerY[i], UNIT_SIZE, UNIT_SIZE);
+                    g.fillRect(greenX[i], greenY[i], UNIT_SIZE, UNIT_SIZE);
                 }
             }
 
             // Blue Snake çiz
-            for (int i = 0; i < aiBodyParts; i++) {
+            for (int i = 0; i < blueBodyParts; i++) {
                 if (i == 0) {
-                    g.setColor(Color.blue);
-                    g.fillRect(aiX[i], aiY[i], UNIT_SIZE, UNIT_SIZE);
+                    g.setColor(new Color(0, 0, 250)); // Mavi yılanın başı için daha açık ton
+                    g.fillRect(blueX[i], blueY[i], UNIT_SIZE, UNIT_SIZE);
                 } else {
-                    g.setColor(new Color(0, 0, 255));
-                    g.fillRect(aiX[i], aiY[i], UNIT_SIZE, UNIT_SIZE);
+                    g.setColor(new Color(0, 0, 150)); // Mavi yılanın gövdesi için daha koyu ton
+                    g.fillRect(blueX[i], blueY[i], UNIT_SIZE, UNIT_SIZE);
                 }
             }
 
+            //skorlar ve kalan süre ekrana yazdırılır.
             g.setColor(Color.white);
             g.setFont(new Font("Ink Free", Font.BOLD, 20));
-            g.drawString("Green Snake Score: " + playerApplesEaten, 10, g.getFont().getSize());
-            g.drawString("Blue Snake Score: " + aiApplesEaten, SCREEN_WIDTH - 185, g.getFont().getSize());
+            g.drawString("Green Snake Score: " + greenApplesEaten, 10, g.getFont().getSize());
+            g.drawString("Blue Snake Score: " + blueApplesEaten, SCREEN_WIDTH - 185, g.getFont().getSize());
             g.drawString("Time Left: " + timeLeft, SCREEN_WIDTH / 2 - 50, g.getFont().getSize());
-        } else {
+        } 
+        
+        else {
             showEndScreen(g);
         }
     }
 
-    public void newApple() {
+    public void newApple() { //elma için sürekli rastgele konum oluşturulur. (UNIT_SIZE yani ayarlanan karelere göre)
         appleX = random.nextInt((int) (SCREEN_WIDTH / UNIT_SIZE)) * UNIT_SIZE;
         appleY = random.nextInt((int) (SCREEN_HEIGHT / UNIT_SIZE)) * UNIT_SIZE;
     }
@@ -193,67 +221,95 @@ public class GamePanel extends JPanel implements Runnable {
             case 'L' -> x[0] -= UNIT_SIZE;
             case 'R' -> x[0] += UNIT_SIZE;
         }
+        //yılanın hareketleri güncellenir, yılanın her parçası bir öncekini takip eder.
+        //yılanın ilk parçası (baş) ise elmanın konumuna doğru hareket eder.
     }
 
     private void checkApple(int[] x, int[] y, String snake) {
         if (x[0] == appleX && y[0] == appleY) {
-            if (snake.equals("player")) {
-                playerBodyParts++;
-                playerApplesEaten++;
-            } else if (snake.equals("ai")) {
-                aiBodyParts++;
-                aiApplesEaten++;
+            if (snake.equals("green")) {
+                greenBodyParts++;
+                greenApplesEaten++;
+            } else if (snake.equals("blue")) {
+                blueBodyParts++;
+                blueApplesEaten++;
             }
             newApple();
         }
+        //yılanın elmayı yiyip yemediği kontrolü yılanın başının ve elmanın konumu karşılaştırılarak yapılır.
+        //buna göre yılan skoru artar ve yeni rastgele konumlu bir elma yeniden oluşturulur.
     }
 
-    private void endGame() {
+    private void showEndScreen(Graphics g) {
+        if (!scoreSaved) {
+            // Skorları veri tabanına kaydet
+            DatabaseHelper.saveScore(greenApplesEaten, blueApplesEaten);
+            scoreSaved = true;  // Skor kaydedildiği güncelleme yap.
+        }
+    
+        //kazanan belirlenir.
+        g.setColor(Color.red);
+        g.setFont(new Font("Giddyup Std", Font.PLAIN, 40));
+        FontMetrics metrics = getFontMetrics(g.getFont());
+        String message = greenApplesEaten > blueApplesEaten ? "Green Snake Wins!" : "Blue Snake Wins!";
+        if (greenApplesEaten == blueApplesEaten) {
+            message = "Draw!";
+        }
+        g.drawString(message, (SCREEN_WIDTH - metrics.stringWidth(message)) / 2, SCREEN_HEIGHT / 2 - 30);
+
+        // Son 3 skoru getir
+        List<String> lastScores = DatabaseHelper.getLastThreeScores();
+        g.setFont(new Font("Ink Free", Font.BOLD, 30));
+        int yOffset = SCREEN_HEIGHT / 2 + 40;
+        g.drawString("Last 3 Scores", (SCREEN_WIDTH - metrics.stringWidth("Last 3 Scores:")) / 2 + 25, yOffset);
+       
+        for (String score : lastScores) {
+            yOffset += 40;
+            g.drawString(score, (SCREEN_WIDTH - metrics.stringWidth(score)) / 2 + 25, yOffset);
+        }
+
+        // Bitiş panelini görünür yap
+        endGamePanel.setVisible(true);
+        this.add(endGamePanel, BorderLayout.CENTER);  //paneli ekrana ekle
+        this.revalidate(); //bileşenleri yeniden yerleştir
+        this.repaint(); //yeniden çiz
+    }
+
+    private void endGame() { //exit durumundan sonra her şey durdurularak kapatılır
         running = false;
-        removeAll(); // Tüm bileşenleri kaldır
-        add(endGamePanel); // Bitiş panelini ekle
-        endGamePanel.setVisible(true); // Bitiş panelini görünür yap
         repaint();
+
+        // Thread'leri durdur
         try {
-            playerThread.join();
-            aiThread.join();
+            greenThread.join();
+            blueThread.join();
             gameThread.join();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
     }
-
-    private void showEndScreen(Graphics g) {
-        g.setColor(Color.red);
-        g.setFont(new Font("Ink Free", Font.BOLD, 40));
-        FontMetrics metrics = getFontMetrics(g.getFont());
-        String message = playerApplesEaten > aiApplesEaten ? "Green Snake Wins!" : "Blue Snake Wins!";
-        if (playerApplesEaten == aiApplesEaten) {
-            message = "Scoreless!";
-        }
-        g.drawString(message, (SCREEN_WIDTH - metrics.stringWidth(message)) / 2, SCREEN_HEIGHT / 2 - 20);
-    }
-
-    public void resetGame() {
-        playerBodyParts = 3;
-        aiBodyParts = 3;
-        playerApplesEaten = 0;
-        aiApplesEaten = 0;
+    public void resetGame() { //start again durumunda oyun tekrar çağırılmadan önce tüm parametreler sıfırlanır
+        greenBodyParts = 3;
+        blueBodyParts = 3;
+        greenApplesEaten = 0;
+        blueApplesEaten = 0;
         timeLeft = GAME_TIME / 1000;
         running = true;
-
-        for (int i = 0; i < playerX.length; i++) {
-            playerX[i] = 0;
-            playerY[i] = 0;
-            aiX[i] = 0;
-            aiY[i] = 0;
+        scoreSaved = false;  // Kaydetme sıfırlandı
+    
+        for (int i = 0; i < greenX.length; i++) {
+            greenX[i] = 0;
+            greenY[i] = 0;
+            blueX[i] = 0;
+            blueY[i] = 0;
         }
-
+    
         remove(endGamePanel); // Bitiş panelini kaldır
-        startGame();
+        startGame(); // Oyunu yeniden başlat
     }
+    
     @Override
     public void run() {
-        // Thread işlevselliği burada yer alıyor
+        // Thread işlevselliği burada yer alıyor.
     }
 }
