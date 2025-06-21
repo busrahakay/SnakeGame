@@ -40,4 +40,4 @@ Oyun, Java diliyle yazılmış olup her yılan bağımsız thread'lerle yönetil
 
 ---
 
-🔧 Uygulama arayüzü ve işlevi görselleri için result_images dosyasını inceleyin!
+🔧 Uygulama arayüz görselleri için result_images dosyasını inceleyin!
